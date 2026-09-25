@@ -9,12 +9,12 @@ except ImportError:
     def load_dotenv(*args, **kwargs):
         return False
 
-from proofaware.config import Config
-from proofaware.runner import run
-
 
 def main() -> None:
     load_dotenv()
+    from proofaware.config import Config
+    from proofaware.runner import run
+
     Path("outputs").mkdir(exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
