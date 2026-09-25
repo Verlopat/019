@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: "Selective-Disclosure Compliance Arbitration for Cross-Chain Atomic Swaps"
+message: "If you use this research prototype, cite the repository."
+type: software
+authors:
+  - family-names: "Verlopat"
+license: MIT
+version: 1.0.0
