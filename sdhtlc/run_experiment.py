@@ -65,9 +65,22 @@ def zk_experiment(seeds,n):
                  "configuration_hash":cfg_hash({"depth":depth})})
  return pd.DataFrame(rows)
 
-def write_test_output(test_name,exp,df):
- # One directory per test. Nothing from different tests is mixed.
- out=Path("output")/test_name
+def next_test_directory():
+ output=Path("output")
+ output.mkdir(parents=True,exist_ok=True)
+ existing=[]
+ for path in output.iterdir():
+  if path.is_dir() and path.name.startswith("test"):
+   suffix=path.name[4:]
+   if suffix.isdigit():
+    existing.append(int(suffix))
+ number=max(existing,default=0)+1
+ return output/f"test{number}"
+
+def write_experiment_output(test_dir,exp,df):
+ # Every complete run gets its own test directory.
+ # E1-E6 are subdirectories inside that run, so repeated runs never overwrite each other.
+ out=test_dir/exp
  raw=out/"raw"
  stats=out/"statistics"
  tables=out/"tables"
@@ -80,13 +93,10 @@ def write_test_output(test_name,exp,df):
  write_tables(df,out=tables)
  generate_figures(df,out=figures)
 
- # Record exactly which experiment and run parameters produced this test.
- metadata={
-  "test":test_name,
+ (out/"metadata.json").write_text(json.dumps({
   "experiment":exp,
   "rows":len(df)
- }
- (out/"metadata.json").write_text(json.dumps(metadata,indent=2))
+ },indent=2))
 
 def main():
  ap=argparse.ArgumentParser()
@@ -95,7 +105,6 @@ def main():
  ap.add_argument("--swaps-per-seed",type=int,default=1000)
  args=ap.parse_args()
 
- # E1 -> test1, E2 -> test2, ... E6 -> test6.
  if args.experiment=="all":
   exps=EXPERIMENTS
  elif args.experiment=="smoke":
@@ -103,17 +112,33 @@ def main():
  else:
   exps=[args.experiment]
 
+ # A single invocation is one test/run.
+ # Example:
+ #   first run  -> output/test1/E1 ... output/test1/E6
+ #   second run -> output/test2/E1 ... output/test2/E6
+ #   third run  -> output/test3/E1 ... output/test3/E6
+ test_dir=next_test_directory()
  results={}
+
  for exp in exps:
-  test_name=f"test{EXPERIMENTS.index(exp)+1}"
   seeds=1 if args.experiment=="smoke" else args.seeds
   n=25 if args.experiment=="smoke" else args.swaps_per_seed
   df=zk_experiment(seeds,n) if exp=="E5" else normal_experiment(exp,seeds,n)
-  write_test_output(test_name,exp,df)
-  results[test_name]=len(df)
+  write_experiment_output(test_dir,exp,df)
+  results[exp]=len(df)
+
+ (test_dir/"run_metadata.json").write_text(json.dumps({
+  "test":test_dir.name,
+  "experiment_argument":args.experiment,
+  "seeds":1 if args.experiment=="smoke" else args.seeds,
+  "swaps_per_seed":25 if args.experiment=="smoke" else args.swaps_per_seed,
+  "experiments":exps,
+  "total_rows":sum(results.values())
+ },indent=2))
 
  print(json.dumps({
-  "tests":results,
+  "test":test_dir.name,
+  "experiments":results,
   "total_rows":sum(results.values()),
   "collusion_theory":{str(k):collusion_probability(k,.2) for k in [3,5,7,9]}
  },indent=2))
