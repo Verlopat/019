@@ -1,0 +1,10 @@
+seeds: 20
+swaps_per_seed: 1000
+credentials: 50000
+attestors: 5
+committee_sizes: [3,5,7,9]
+threshold_ratio: 0.6666666667
+fault_rates: [0.0,0.1,0.2,0.3,0.4,0.5]
+byzantine_fractions: [0.0,0.1,0.2,0.3,0.4]
+slash_rates: [0.05,0.10,0.25,0.50]
+timelock_margin_seconds: [10,30,60,120]
