@@ -1,9 +1,0 @@
-__pycache__/
-*.py[cod]
-.venv/
-.env
-outputs/*
-!outputs/.gitkeep
-.pytest_cache/
-*.log
-.DS_Store
