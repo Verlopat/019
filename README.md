@@ -1,63 +1,42 @@
-# Proof-Aware Machine Learning for On-Chain Decision Systems
+# Selective-Disclosure Compliance Arbitration for Cross-Chain Atomic Swaps
 
-Research prototype implementing the three sequential objectives from the project synopsis:
+Research prototype implementing the specification in `idea(1).txt`.
 
-1. Objective 1 — Cost–fidelity characterisation: a factorial benchmark varies proving backend, quantisation and activation strategy and records proving-time estimates, memory, proof size, verification gas, constraints and accuracy loss.
-2. Objective 2 — Proof-aware co-design: a small architecture search uses the measured cost structure to jointly select hidden width, precision, activation and circuit backend under a constraint budget.
-3. Objective 3 — Adversarial validation: boundary-oriented perturbations are generated and a conservative certified gate fails closed when the model/circuit approximation margin cannot establish decision stability.
+Architecture: `VC → ZK compliance proof → multi-attestor compliance → PASS/FAIL/CONFLICT → stake-backed threshold arbitration → Ethereum/Solana SD-HTLC → privacy-preserving audit`.
 
-## Important research-status note
-
-This repository is a reproducible research prototype, not a claim of a production zk-SNARK implementation. The proving backends currently use transparent cost models and deterministic proof commitments so the complete experiment runs with ordinary Python and no paid service. A real Groth16/Plonk/Halo2 backend can be attached later behind the same circuit interface; its measurements should replace, rather than be mixed with, the simulator measurements.
-
-The commitment produced by the prototype is a cryptographic artifact for experiment traceability. It is not a zero-knowledge proof.
+The Python layer is an executable reference implementation and experiment controller. Circom, Solidity and Anchor/Rust sources define the real-chain integration points. Simulated measurements are explicitly labelled and are never presented as production-chain measurements.
 
 ## Run
 
-Ubuntu/Linux:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python3 -m sdhtlc.run_experiment --experiment smoke
+python3 -m sdhtlc.run_experiment --experiment all --seeds 20 --swaps-per-seed 1000
+```
 
-    git clone https://github.com/Verlopat/019.git
-    cd 019
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt
-    python3 Main.py
+## Required evaluation
 
-Every execution creates a new directory:
+E1 correctness/atomicity; E2 compliance-fault tolerance; E3 arbitration scalability; E4 Byzantine/collusion resistance; E5 ZK overhead; E6 privacy/auditability.
 
-    outputs/test1/
-    outputs/test2/
-    outputs/test3/
+Baselines: B0 Vanilla HTLC, B1 centralized compliance, B2 multi-attestor, B3 ZK compliance, B4 full SD-HTLC, B5 arbitration-disabled ablation.
 
-Each run contains:
+The full configuration records 20 independent seeds and 1,000+ paired swaps per condition. Every result row includes experiment, seed, method and configuration hash.
 
-- manifest.json — complete configuration, metrics and selected design
-- objective1_factorial.csv — factorial benchmark
-- objective2_codesign_candidates.csv — co-design search space
-- objective3_boundary_attacks.csv — adversarial boundary results
+## Layout
 
-## Tests
+```
+sdhtlc/{compliance,zk,arbitration,crosschain,simulation,evaluation,audit}
+circuits/
+ethereum/
+solana/
+configs/
+tests/
+results/
+docs/
+```
 
-    python3 -m unittest discover -s tests -v
+## Scientific boundary
 
-## Configuration
-
-Copy .env.example to .env and change values if required. The default configuration is intentionally small enough for a normal laptop.
-
-## Reproducibility
-
-Every manifest records the random seed, Python version, platform, model size, experimental parameters and elapsed runtime. The output directory is never reused.
-
-## Scientific interpretation
-
-The benchmark deliberately keeps the cost model explicit. The five primary cost quantities are:
-
-- prover time
-- peak prover memory
-- proof size
-- verification gas estimate
-- accuracy loss relative to the floating-point baseline
-
-The adversarial stage reports decision flips and the proportion of inputs rejected by the fail-closed stability gate.
-
-These outputs are intended to support figures and tables in a research paper; they should not be presented as measurements of a specific deployed proving system until a real proving backend is connected.
+The reference ZK layer is deterministic and testable but is not itself a Groth16 proof. Install Circom/snarkjs and use `circuits/compliance.circom` for actual proof generation. Ethereum gas and Solana CU are estimates until local-chain runners collect real receipts/logs. The prototype is not legal-compliance certification.
